@@ -14,7 +14,7 @@ class crawl_twitter:
 		
 		#Constants
 		self.MAX_FRIENDS_NODE_COUNT = 1000
-		self.MAX_NODE_COUNT = 5000
+		self.MAX_NODE_COUNT = 1
 		self.MY_SCREEN_NAME = 'iam_KarthikC'
 
 		#DataStructures
@@ -72,7 +72,7 @@ class crawl_twitter:
 			self.current_node_list.extend(users_id_list)
 			self.all_node_set.add(self.current_node_list.pop(0))
 		
-			#Only one api call is allowed per min. So sleep for a min after every call
+			#Only one api call is allowed per two min. So sleep for every two min after every call
 			time.sleep(120)
 			self.user_id_to_friends_id_dict[uid] = users_id_list
 
@@ -86,6 +86,8 @@ class crawl_twitter:
 				break
 			
 			logging.info("user_id %s added and its count is %s" % (uid, traversed_node_count))
+			
+			logging.info("Rate Limit %s" % (api.GetRateLimitStatus()))
 
 		#Write a node and its friends' ids in a file as and when it is cralwed
 		crawled_file.write(json.dumps(self.user_id_to_friends_id_dict))
