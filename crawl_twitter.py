@@ -1,7 +1,7 @@
 import twitter
 import time, random, logging
 import json
-import os
+import os, codecs
 
 class crawl_twitter:
 	def __init__(self):
@@ -14,7 +14,7 @@ class crawl_twitter:
 		
 		#Constants
 		self.MAX_FRIENDS_NODE_COUNT = 1000
-		self.MAX_NODE_COUNT = 10
+		self.MAX_NODE_COUNT = 5000
 		self.MY_SCREEN_NAME = 'iam_KarthikC'
 
 		#DataStructures
@@ -52,7 +52,7 @@ class crawl_twitter:
 		traversed_node_count = 0
 
 		#FileOpen
-		crawled_file = open(self.crawled_nodes_file, 'w')
+		crawled_file = codecs.open(self.crawled_nodes_file, 'w', 'utf-8')
 
 		#Starting the crawling from my twitter acc/ Me as the center node
 		user_ids = api.GetFriendIDs(screen_name=self.MY_SCREEN_NAME)
@@ -76,11 +76,6 @@ class crawl_twitter:
 			time.sleep(120)
 			self.user_id_to_friends_id_dict[uid] = users_id_list
 
-			#Write a node and its friends' ids in a file as and when it is cralwed
-			crawled_file.write(json.dumps(self.user_id_to_friends_id_dict))
-			self.user_di_to_friends_id_dict = {}
-						
-			
 			#Clearing data structures
 			users_id_list = []
 		
@@ -89,10 +84,14 @@ class crawl_twitter:
 			#If max nodes are crawled then stop crawling
 			if traversed_node_count > self.MAX_NODE_COUNT:
 				break
-
 			
 			logging.info("user_id %s added and its count is %s" % (uid, traversed_node_count))
 
+		#Write a node and its friends' ids in a file as and when it is cralwed
+		crawled_file.write(json.dumps(self.user_id_to_friends_id_dict))
+
+		#Closing file descriptor
+		crawled_file.close()
 
 	def get_random_user_ids(self, users_id_list):
 		#Return random subset of nodes from the given big list of nodes
