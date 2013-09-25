@@ -14,8 +14,10 @@ class crawl_twitter:
 		
 		#Constants
 		self.MAX_FRIENDS_NODE_COUNT = 1000
-		self.MAX_NODE_COUNT = 1
+		self.MAX_NODE_COUNT = 300
 		self.MY_SCREEN_NAME = 'iam_KarthikC'
+		self.MAX_NODE_TO_DUMP = 30
+		self.SLEEP_TIME = 120
 
 		#DataStructures
 		self.all_node_set = set()
@@ -24,7 +26,6 @@ class crawl_twitter:
 
 		#IOFiles
 		self.logger_file = os.path.join('OUTPUT','crawl_twitter.log')
-		self.crawled_nodes_file = os.path.join('OUTPUT','crawled_nodes_output')
 
 	def run_main(self):
 		self.initialize_logger()
@@ -38,6 +39,9 @@ class crawl_twitter:
 		#Create API Object
 		api = twitter.Api(consumer_key=self.consumer_key, consumer_secret=self.consumer_secret, access_token_key=self.access_token_key, access_token_secret=self.access_token_secret)
 		
+		# After every api call, sleep for one min
+		time.sleep(self.SLEEP_TIME) 
+		
 		#GetFriendsIds
 		self.get_friends_id(api)
 	
@@ -50,12 +54,12 @@ class crawl_twitter:
 
 		#Local variables
 		traversed_node_count = 0
-
-		#FileOpen
-		crawled_file = codecs.open(self.crawled_nodes_file, 'w', 'utf-8')
+		max_dump_count = 0
+		dump_count =0
 
 		#Starting the crawling from my twitter acc/ Me as the center node
 		user_ids = api.GetFriendIDs(screen_name=self.MY_SCREEN_NAME)
+		time.sleep(self.SLEEP_TIME)
 		self.current_node_list.extend(user_ids)
 
 		#Now employ BFS to all other friend's node
@@ -65,35 +69,49 @@ class crawl_twitter:
 			if uid in self.all_node_set:
 				continue
 			users_id_list = api.GetFriendIDs(user_id=uid)
+			time.sleep(self.SLEEP_TIME)
 
 			#If any node has friends more than max friends count, then select randomly a 1000 nodes from them.
 			if len(users_id_list) > self.MAX_FRIENDS_NODE_COUNT:
 				users_id_list = self.get_random_user_ids(users_id_list)
 			self.current_node_list.extend(users_id_list)
 			self.all_node_set.add(self.current_node_list.pop(0))
-		
+
+
 			#Only one api call is allowed per two min. So sleep for every two min after every call
-			time.sleep(120)
 			self.user_id_to_friends_id_dict[uid] = users_id_list
 
 			#Clearing data structures
 			users_id_list = []
 		
 			traversed_node_count += 1
-			
+			max_dump_count += 1			
+
 			#If max nodes are crawled then stop crawling
 			if traversed_node_count > self.MAX_NODE_COUNT:
 				break
 			
 			logging.info("user_id %s added and its count is %s" % (uid, traversed_node_count))
 			
-			logging.info("Rate Limit %s" % (api.GetRateLimitStatus()))
 
-		#Write a node and its friends' ids in a file as and when it is cralwed
-		crawled_file.write(json.dumps(self.user_id_to_friends_id_dict))
+			#Write a node and its friends' ids in a file after some nodes are crawled
+			if max_dump_count == self.MAX_NODE_TO_DUMP:
 
-		#Closing file descriptor
-		crawled_file.close()
+				#FileOperations
+				self.crawled_nodes_file = os.path.join('OUTPUT','crawled_nodes_output%s' % (dump_count))
+				crawled_file = codecs.open(self.crawled_nodes_file, 'w', 'utf-8')
+
+				#FileDump
+				crawled_file.write(json.dumps(self.user_id_to_friends_id_dict))
+	
+				#DS Operations
+				dump_count += 1
+				max_dump_count = 0
+				self.user_id_to_friends_id_dict = {}
+
+				#Closing file descriptor
+				crawled_file.close()
+
 
 	def get_random_user_ids(self, users_id_list):
 		#Return random subset of nodes from the given big list of nodes
