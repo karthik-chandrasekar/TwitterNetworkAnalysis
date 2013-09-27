@@ -17,7 +17,7 @@ class crawl_twitter:
 		self.MAX_NODE_COUNT = 300
 		self.MY_SCREEN_NAME = 'iam_KarthikC'
 		self.MAX_NODE_TO_DUMP = 30
-		self.SLEEP_TIME = 120
+		self.SLEEP_TIME = 70
 
 		#DataStructures
 		self.all_node_set = set()
@@ -40,8 +40,11 @@ class crawl_twitter:
 		api = twitter.Api(consumer_key=self.consumer_key, consumer_secret=self.consumer_secret, access_token_key=self.access_token_key, access_token_secret=self.access_token_secret)
 		
 		# After every api call, sleep for one min
-		time.sleep(self.SLEEP_TIME) 
+		time.sleep(self.SLEEP_TIME)
+		logging.info(" Sleep time is %s" % (self.SLEEP_TIME)) 
+		print(" Sleep time is %s" % (self.SLEEP_TIME)) 
 		logging.info("Sleeping after sleep 1")
+		print("Sleeping after sleep 1")
 		
 		#GetFriendsIds
 		self.get_friends_id(api)
@@ -62,6 +65,7 @@ class crawl_twitter:
 		user_ids = api.GetFriendIDs(screen_name=self.MY_SCREEN_NAME)
 		time.sleep(self.SLEEP_TIME)
 		logging.info("Sleeping after sleep 2")
+		print("Sleeping after sleep 2")
 		self.current_node_list.extend(user_ids)
 
 		#Now employ BFS to all other friend's node
@@ -73,6 +77,7 @@ class crawl_twitter:
 			users_id_list = api.GetFriendIDs(user_id=uid)
 			time.sleep(self.SLEEP_TIME)
 			logging.info("Sleeping after sleep 3")
+			print("Sleeping after sleep 3")
 
 			#If any node has friends more than max friends count, then select randomly a 1000 nodes from them.
 			if len(users_id_list) > self.MAX_FRIENDS_NODE_COUNT:
@@ -95,6 +100,7 @@ class crawl_twitter:
 				break
 			
 			logging.info("user_id %s added and its count is %s" % (uid, traversed_node_count))
+			print("user_id %s added and its count is %s" % (uid, traversed_node_count))
 
 
 			#Write a node and its friends' ids in a file after some nodes are crawled
@@ -126,7 +132,10 @@ class crawl_twitter:
 		friends_count = len(users_id_list)		
 
 		while 1:
-			random_num = random.randint(0, friends_count)
+			random_num = random.randint(0, friends_count-1)
+
+			if random_num > friends_count-1:
+				continue
 			
 			randomized_streamlined_user_id_list.append(users_id_list.pop(random_num))
 			
