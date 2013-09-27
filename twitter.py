@@ -3685,6 +3685,7 @@ class Api(object):
       if count is not None:
         parameters['count'] = count
       result = []
+      count = 0
       while True:
         parameters['cursor'] = cursor
         json = self._RequestUrl(url, 'GET', data=parameters)
@@ -3697,8 +3698,9 @@ class Api(object):
             cursor = data['next_cursor']
         else:
           break
-        sec = self.GetSleepTime(70)
-        time.sleep(sec)        
+	count +=1
+	print("Sleeping for user_id %s, for %s times" % (user_id, count))
+        time.sleep(70)        
       return result
 
 
