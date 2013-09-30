@@ -14,16 +14,25 @@ class crawl_twitter:
 		
 		#Constants
 		self.MAX_FRIENDS_NODE_COUNT = 1000
+		self.MAX_FOLLOWERS_NODE_COUNT = 1000
 		self.MAX_NODE_COUNT = 300
 		self.MY_SCREEN_NAME = 'iam_KarthikC'
 		self.MAX_NODE_TO_DUMP = 30
 		self.SLEEP_TIME = 70
 
 		#DataStructures
+
+		#Get Friends
 		self.all_node_set = set()
 		self.current_node_list = []
 		self.user_id_to_friends_id_dict = {}
+		
+		#Get Followers
+		self.all_followers_node_set = set()
+		self.current_followers_list = []
+		self.user_id_to_followers_id_dict = {}
 
+			
 		#IOFiles
 		self.logger_file = os.path.join('OUTPUT','crawl_twitter.log')
 
@@ -47,8 +56,10 @@ class crawl_twitter:
 		print("Sleeping after sleep 1")
 		
 		#GetFriendsIds
-		self.get_friends_id(api)
+		#self.get_friends_id(api)
 	
+		#GetFollowersIds
+		self.get_followers_id(api)
 
 	def get_friends_id(self, api):
 		#Crawl a node and its friends' ids and dump in a file
@@ -90,7 +101,7 @@ class crawl_twitter:
 			self.all_node_set.add(self.current_node_list.pop(0))
 
 
-			#Only one api call is allowed per two min. So sleep for every two min after every call
+			#Only one api call is allowed per  min. So sleep for a min after every call
 			self.user_id_to_friends_id_dict[uid] = users_id_list
 
 			#Clearing data structures
@@ -125,6 +136,78 @@ class crawl_twitter:
 				#Closing file descriptor
 				crawled_file.close()
 
+	def get_followers_id(self, api):
+		#Crawl a node and its followers' ids and dump in a file
+
+		#Local data structures
+		users_id_list = []
+		
+		#Local variables
+		traversed_node_count = 0
+		max_dump_count = 0
+		dump_count = 0
+		
+		#Star crawling from my twitter acc. 
+		user_ids = api.GetFollowerIDs(screen_name=self.MY_SCREEN_NAME)
+		time.sleep(self.SLEEP_TIME)
+		logging.info("Sleeping after sleep 2 - getFollower")
+		print("Sleeping after sleep 2 - getFollower")
+		self.current_followers_list.extend(user_ids)
+
+		#Now employ BEF to all other followers' node
+		for uid in self.current_followers_list:
+
+			#If this node is alreay processed, continue.
+			if uid in self.all_followers_node_set:
+				continue
+			try:
+				users_id_list = api.GetFollowerIDs(user_id=uid)
+			except:
+				logging.info("user id %s has some ERROR. Check it !! - getFollower" % (uid))
+			
+			time.sleep(self.SLEEP_TIME)
+			logging.info("Sleeping after sleep 3 - getFollower")
+			print("Sleeping after sleep 3")
+
+			#If any node has followers more than max followers count, then select randomly a 1000 nodes form them
+			if len(users_id_list) > self.MAX_FOLLOWERS_NODE_COUNT:
+				users_id_list = self.get_random_user_ids(users_id_list)
+			self.current_followers_list.extend(users_id_list)
+			self.all_followers_node_set.add(self.current_followers_list.pop(0))
+			
+			#Only one api call is allowed per min. So sleep for a min after every call
+			self.user_id_to_followers_id_dict[uid] = users_id_list
+
+			#Clearing data structures
+			users_id_list = []
+				
+			traversed_node_count += 1
+			max_dump_count += 1
+
+			#If max nodes are crawled then stop crawling
+			if traversed_node_count > self.MAX_NODE_COUNT:
+				break
+ 
+			logging.info("user_id %s added and its count is %s" % (uid, traversed_node_count))
+			print("user_id %s added and its count is %s" % (uid, traversed_node_count))
+
+			#Write a node and its followers' ids in a file after some nodes are crawled
+			if max_dump_count == self.MAX_NODE_TO_DUMP:
+
+				#FileOperations
+				self.crawled_nodes_file = os.path.join('OUTPUT','Followers%s' % (dump_count))
+				crawled_file = codecs.open(self.crawled_nodes_file, 'w', 'utf-8')
+
+				#FileDump
+				crawled_file.write(json.dumps(self.user_id_to_followers_id_dict))
+
+				#DS Operations
+				dump_count += 1
+				max_dump_count = 0
+				self.user_id_to_followers_dict = {}
+
+				#Closing the file descriptor
+				crawled_file.close()
 
 	def get_random_user_ids(self, users_id_list):
 		#Return random subset of nodes from the given big list of nodes
