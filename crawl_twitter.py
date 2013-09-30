@@ -74,7 +74,11 @@ class crawl_twitter:
 			#If this node is already seen, continue . 
 			if uid in self.all_node_set:
 				continue
-			users_id_list = api.GetFriendIDs(user_id=uid)
+			try:
+				users_id_list = api.GetFriendIDs(user_id=uid)
+			except:
+				logging.info("user id %s has some ERROR. check it !!" % (uid))
+				continue
 			time.sleep(self.SLEEP_TIME)
 			logging.info("Sleeping after sleep 3")
 			print("Sleeping after sleep 3")
