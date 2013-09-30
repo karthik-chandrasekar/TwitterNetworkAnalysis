@@ -3768,8 +3768,8 @@ class Api(object):
                 break
         else:
           break
-        sec = self.GetSleepTime('/followers/ids')
-        time.sleep(sec) 
+	print("Sleeping for user_id %s, for %s times - get followers" % (user_id, count))
+        time.sleep(70)        
       return result
 
   def GetFollowers(self, user_id=None, screen_name=None, cursor=-1, skip_status=False, include_user_entities=False):
