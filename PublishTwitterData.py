@@ -5,7 +5,7 @@ class CrawledInput:
 	def __init__(self):
 	
 		#Filenames
-		self.friends_info_file = 'crawled_nodes_output'
+		self.friends_info_file = 'crawled_nodes_output'   #Don't hard code the file names. 
 		
 		#FileDescriptor
 		self.friends_info_fd = open(self.friends_info_file, 'r')
@@ -14,6 +14,9 @@ class CrawledInput:
 		self.friends_info_dict = {}
 		self.uniq_node_set = set()
 		self.adjacency_list = []
+
+		#GlobalVariables
+		self.NODE_LIMIT = 10
 
 	def run(self):
 		friends_info_data = self.friends_info_fd.read()
@@ -41,12 +44,17 @@ class CrawledInput:
 
 
 	def generate_adj_list(self):
+		i=0
 		for key, value in self.friends_info_dict.iteritems():
 			tmp = ''
 			tmp = '%s' % (key)
 			for node in value:
 				tmp = '%s %s' % (tmp, node)
-			self.adjacency_list.append(tmp)
+			i +=1
+			if i<self.NODE_LIMIT:
+				self.adjacency_list.append(tmp)
+			else:
+				break
 
 		
 	def get_uniq_node_count(self):
@@ -65,11 +73,13 @@ class CrawledInput:
 
 	def betweeness_centrality(self):
 		betweenness = nx.algorithms.centrality.betweenness_centrality(self.G)
-		print 'Betweenness computations complete.'
+		print 'Betweenness computations complete'
+		print set(betweenness.values())
 
 	def closeness_centrality(self):
 		closeness = nx.algorithms.centrality.closeness_centrality(self.G)
 		print 'Closeness computations complete.'
+		print set(closeness.values())
 
 
 
