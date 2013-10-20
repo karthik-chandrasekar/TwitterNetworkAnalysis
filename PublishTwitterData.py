@@ -1,132 +1,119 @@
-import json
+import  logging
 import networkx as nx
 
-class CrawledInput:
+class SocialNetworkAnalysis:
 	def __init__(self):
 	
 		#Filenames
-		self.friends_info_file = 'crawled_nodes_output'   #Don't hard code the file names. 
-		
-		#FileDescriptor
-		self.friends_info_fd = open(self.friends_info_file, 'r')
-
-		#DataStructures
-		self.friends_info_dict = {}
-		self.uniq_node_set = set()
-		self.adjacency_list = []
-
-		#GlobalVariables
-		self.NODE_LIMIT = 5
+		self.twitter_data_edge_list = 'twitter_data_edge_list.csv'	
+		self.logger_file = 'crawl_twitter.log'
 
 	def run(self):
-		friends_info_data = self.friends_info_fd.read()
-		self.friends_info_dict = json.loads(friends_info_data)
 
-		#Count unique nodes count
-		self.get_uniq_nodes()
-
-		#Display unique nodes count
-		print "Unique number of user node is %s "  % (len(self.uniq_node_set))
-
-		#Generate adj list from json output
-		self.generate_adj_list_without_limit()
-
-		#Parse adjlist and form graph
-		self.get_graph()
-
+		self.initialize_logger()
+		self.get_graph_from_edge_list()
 		self.network_measures()
 
+	def initialize_logger(self):
 
-	def get_graph(self):
-
-		self.G = nx.DiGraph(nx.parse_adjlist(self.adjacency_list, nodetype=int))
-
-
-	def generate_adj_list(self):
-		i=0
-		for key, value in self.friends_info_dict.iteritems():
-			tmp = ''
-			tmp = '%s' % (key)
-			for node in value:
-				tmp = '%s %s' % (tmp, node)
-			i +=1
-			if i<self.NODE_LIMIT:
-				self.adjacency_list.append(tmp)
-			else:
-				break
-
-	def generate_adj_list_without_limit(self):
-		for key, value in self.friends_info_dict.iteritems():
-			tmp = ''
-			tmp = '%s' % (key)
-			for node in value:
-				tmp = '%s %s' % (tmp, node)
-				self.adjacency_list.append(tmp)
+		logging.basicConfig(filename=self.logger_file, level=logging.INFO)
+		logging.info("Initialized logger")	
 
 
-		
-	def get_uniq_nodes(self):
-		for key, value in self.friends_info_dict.iteritems():
-			if key not in self.uniq_node_set:
-				self.uniq_node_set.add(key)
-			for node in value:
-				if node not in self.uniq_node_set:
-					self.uniq_node_set.add(node)
+	def get_graph_from_edge_list(self):
+
+		logging.info("Forming graph from edge list")
+		self.G = nx.read_edgelist(self.twitter_data_edge_list, create_using=nx.DiGraph())
 
 	def network_measures(self):
+
+		self.get_connected_comp()
 		self.p1()
 		self.p2()
 
 	def p1(self):
+
+		logging.info( "Inside p1")
 		self.graph_diameter()
 		self.count_3_cycles()
 
 	def p2(self):
-		#self.local_clustering_coefficient()
-		#self.global_clustering_coefficient()
-		self.degree_centrality()
+
+		logging.info("Inside p2")
+		self.local_clustering_coefficient()
+		self.global_clustering_coefficient()
+		self.in_degree_centrality()
 		self.eigen_vector_centrality()
 		self.pagerank()
 
 
 	def graph_diameter(self):
-		diameter = nx.diameter(self.G)
-		print "Diameter of the graph is %s" % (diameter)
+
+		logging.info("Inside calculating graph dia")
+		diameter = nx.diameter(self.SG)
+		logging.info("Diameter of the graph is %s" % (diameter))
 	
 	def count_3_cycles(self):
+
+		#Compute no of 3 cycles
+		logging.info("Count the number of cycles of length 3 present")
 		three_cycle_list = []
 		all_cycle_list = list(nx.simple_cycles(self.G))
 		for cycle in all_cycle_list:
 			if len(cycle) == 3:
 				three_cycle_list.append(cycle)
 
-		print "Length of three cycle is %s" % (len(three_cycle_list))
+		logging.info("Length of three cycle is %s" % (len(three_cycle_list)))
+		three_cycle_list = []
+
+	def get_connected_comp(self):
+
+		#Compute the largest connected component
+		logging.info("Get connected comp")
+		self.SG = nx.connected_component_subgraphs(self.G.to_undirected())[0]
+	
 
 	def local_clustering_coefficient(self):
-		clustering_values_dict = nx.clustering(self.G)
-		print "Clustering value dict is %s" % (len(clustering_values_dict.keys()))
+
+		#Compute the local clustering coefficient
+		logging.info("Compute the local clustering coefficient")
+		clustering_values_dict = nx.clustering(self.SG)
+		logging.info("Clustering value dict is %s" % (len(clustering_values_dict.keys())))
 
 
 	def global_clustering_coefficient(self):
-		avg_clustering_value = nx.average_clustering(self.G)
-		print "Avg clustering value is %s" % (avg_clustering_value)
 
-	def degree_centrality(self):
+		#Compute the global clustering coefficient
+		logging.info("Gloabl clustering coeffcient")
+		avg_clustering_value = nx.average_clustering(self.SG)
+		logging.info("Avg clustering value is %s" % (avg_clustering_value))
+
+	def in_degree_centrality(self):
+
+		#Compute the in degree centrality of the graph
+		logging.info("Inside degree centrality")
 		indegree_dict = nx.in_degree_centrality(self.G)
-		print "In degree dic length %s" % (len(indegree_dict.keys()))
+		logging.info("In degree dic length %s" % (len(indegree_dict.keys())))
+		indegree_dict = {}
 
-	def count_triangles(self):
-		graph_triangles = nx.triangles(self.G)
-		print "3 cycle graph count %s" % (len(graph_triangles.keys()))
 
 	def eigen_vector_centrality(self):
+
+		#Compute the eigen vector centrality of the graph
+		logging.info("Inside eigne vector centrality module")
 		eigenvector_centrality_dict = nx.eigenvector_centrality_numpy(self.G)		
-		print "Eigen vector centrality dict count is %s " % (len(eigenvector_centrality_dict.keys()))
+		logging.info("Eigen vector centrality dict count is %s " % (len(eigenvector_centrality_dict.keys())))
+		eigenvector_centrality_dict = {}
 
 	def pagerank(self):
+
+		#Compute the page rank of the graph
+		logging.info("Inside pagerank module")
 		pagerank_dict = nx.pagerank_numpy(self.G)	
-		print "Page rank dict length is %s" % (len(pagerank_dict.values()))
+		logging.info("Page rank dict length is %s" % (len(pagerank_dict.values())))
+		pagerank_dict = {}
+
 
 if __name__ == "__main__":
-	ci  = CrawledInput()
-	ci.run()
+	san  = SocialNetworkAnalysis()
+	san.run()
