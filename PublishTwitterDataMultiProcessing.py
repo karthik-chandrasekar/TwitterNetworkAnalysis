@@ -126,8 +126,15 @@ class SocialNetworkAnalysis:
 
 		#Compute the number of bridges in the graph
 		logging.info("Count the number of bridges")
-		strongly_conn_comp = nx.strongly_connected_components(self.SG.to_directed())
-		logging.info("Number of bridges is %s"  % (len(strongly_conn_comp) -1 ))
+		bridge_count = 0
+
+		for key_node, val_node in self.SG.edges():
+			self.SG.remove_edge(key_node, val_node)
+			if not (nx.is_connected(self.SG)):
+				bridge_count += bridge_count
+			self.SG.add_edge(key_node, val_node)
+
+		logging.info("Number of bridges is %s"  % (bridge_count))
 		
 
 
