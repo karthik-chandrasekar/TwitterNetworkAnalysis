@@ -1,3 +1,4 @@
+from __future__ import division
 import  logging
 import networkx as nx
 from multiprocessing import Process
@@ -223,13 +224,30 @@ class SocialNetworkAnalysis:
 
 	def find_minimum_spanning_tree(self):
 
+		self.generate_weighted_graph()
+		mst_weight = 0
+
 		#Compute the minimum spanning tree
 		logging.info("Minimum spanning tree ")
-		mst = nx.minimum_spanning_tree(self.SG)
+		mst = nx.minimum_spanning_tree(self.weighted_graph)
 
 		logging.info("The weight of mst")
-		logging.info(len(mst.edges(data=True)))
-		
+		for a,b,c in mst.edges(data=True):
+			mst_weight += c.get('weight', 0)
+
+		logging.info("Weight of minimum spanning tree is %s" % (mst_weight))
+		self.weighted_graph = None
+
+	def generate_weighted_graph(self):
+		logging.info('Generating weighted graph')
+		self.weighted_graph = nx.Graph()
+		for key_node, val_node in self.SG.edges():
+			weight = self.SG.degree(key_node) - self.SG.degree(val_node)
+			if weight < 0:
+				weight = 0
+			self.weighted_graph.add_edge(key_node, val_node, weight=weight)	
+
+
     	def average_shortest_path_length(self, graph_name, graph):
 		logging.info('Finding average shortest path length for %s' % graph_name)
 		asp = nx.average_shortest_path_length(graph)
