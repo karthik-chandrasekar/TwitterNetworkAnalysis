@@ -8,6 +8,8 @@ class SocialNetworkAnalysis:
 		#Filenames
 		self.twitter_data_edge_list = 'head_twitter_data_edge_list'	
 		self.logger_file = 'crawl_twitter.log'
+
+		self.user_id_to_follower_ids_dict = {}
 		self.node_count = 0
 		self.edge_count = 0
 		self.SMALL_WORLD_PROB = 0.1
@@ -67,7 +69,10 @@ class SocialNetworkAnalysis:
 		mst = Process(target=self.find_minimum_spanning_tree)
 		mst.start()
 
+		self.bridge_count()
+
 	def p2(self):
+
 
 		logging.info("Inside p2")
 
@@ -85,6 +90,8 @@ class SocialNetworkAnalysis:
 
 		pr = Process(target=self.pagerank)
 		pr.start()
+
+		self.regular_equivalence()
 
 	def p3(self):
 		logging.info("Inside p3")
@@ -114,7 +121,14 @@ class SocialNetworkAnalysis:
 		logging.info("Length of three cycle is %s" % (len(three_cycle_list)))
 		three_cycle_list = []
 
-	
+	def bridge_count(self):
+
+		#Compute the number of bridges in the graph
+		logging.info("Count the number of bridges")
+		strongly_conn_comp = nx.strongly_connected_components(self.SG.to_directed())
+		logging.info("Number of bridges is %s"  % (len(strongly_conn_comp) -1 ))
+		
+
 
 	def local_clustering_coefficient(self):
 
@@ -179,6 +193,33 @@ class SocialNetworkAnalysis:
 
 		pagerank_dict = {}
 
+	def regular_equivalence(self):
+
+		#Find out the most similar two nodes
+
+		logging.info("Computing regular equivalence")
+		max_reg_equiv = 0
+		node_pairs = (0,0)
+
+		for key_node, val_node in self.SG.edges():
+			key_node_neighbors_set = set(self.SG.neighbors(key_node))
+			val_node_neighbors_set = set(self.SG.neighbors(val_node))
+
+
+			reg_equiv = len(key_node_neighbors_set.intersection(val_node_neighbors_set)) / len(key_node_neighbors_set.union(val_node_neighbors_set))
+			if reg_equiv > max_reg_equiv:
+				max_reg_equiv = reg_equiv
+				node_pairs = (key_node, val_node)
+				
+		logging.info("Most similar node pairs %s and  %s and value is %s" % (node_pairs[0],node_pairs[1], max_reg_equiv))	
+		self.user_id_follower_ids_dict = {}
+
+
+	def get_adj_list(self):
+		edge_list = self.SG.edges()
+		for key_node, val_node  in edge_list:
+			self.user_id_to_follower_ids_dict.setdefault(key_node, set()).add(val_node)
+		
 
 	def find_minimum_spanning_tree(self):
 
