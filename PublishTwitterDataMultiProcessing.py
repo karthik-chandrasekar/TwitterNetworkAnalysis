@@ -8,6 +8,9 @@ class SocialNetworkAnalysis:
 		#Filenames
 		self.twitter_data_edge_list = 'head_twitter_data_edge_list'	
 		self.logger_file = 'crawl_twitter.log'
+		self.node_count = 0
+		self.edge_count = 0
+		self.SMALL_WORLD_PROB = 0.1
 
 	def run(self):
 
@@ -61,6 +64,9 @@ class SocialNetworkAnalysis:
 		cycle = Process(target=self.count_3_cycles)
 		cycle.start()
 
+		mst = Process(target=self.find_minimum_spanning_tree)
+		mst.start()
+
 	def p2(self):
 
 		logging.info("Inside p2")
@@ -68,7 +74,7 @@ class SocialNetworkAnalysis:
 		local_clust = Process(target=self.local_clustering_coefficient)
 		local_clust.start()
 
-		global_clust = Process(target=self.global_clustering_coefficient)
+		global_clust = Process(target=self.global_clustering_coefficient, args=('Real World', self.SG))
 		global_clust.start()
 
 		indeg = Process(target=self.in_degree_centrality)
@@ -82,9 +88,12 @@ class SocialNetworkAnalysis:
 
 	def p3(self):
 		logging.info("Inside p3")
-
-		mst = Process(target=self.find_minimum_spanning_tree)
-		mst.start()
+		self.node_count = self.SG.number_of_nodes()
+		self.edge_count = self.SG.number_of_edges()
+		self.average_shortest_path_length('Real Graph', self.SG)
+		self.random_graph()
+		self.small_world_model_graph()
+		self.preferential_model_graph()
 
 	def graph_diameter(self):
 
@@ -120,12 +129,11 @@ class SocialNetworkAnalysis:
 		logging.info("Avg local clustering coeff is %s" % (sum(local_clust_coeff_values)/len(local_clust_coeff_values)))
 
 
-	def global_clustering_coefficient(self):
-
+	def global_clustering_coefficient(self, graph_name, graph):
 		#Compute the global clustering coefficient
-		logging.info("Gloabl clustering coeffcient")
-		avg_clustering_value = nx.average_clustering(self.SG)
-		logging.info("Avg clustering value is %s" % (avg_clustering_value))
+		logging.info('Gloabl clustering coeffcient for %s' % graph_name)
+		avg_clustering_value = nx.average_clustering(graph)
+		logging.info('Avg clustering value for %s is %s' % (graph_name, avg_clustering_value))
 
 	def in_degree_centrality(self):
 
@@ -181,6 +189,36 @@ class SocialNetworkAnalysis:
 		logging.info("The weight of mst")
 		logging.info(len(mst.edges(data=True)))
 		
+    	def average_shortest_path_length(self, graph_name, graph):
+		logging.info('Finding average shortest path length for %s' % graph_name)
+		asp = nx.average_shortest_path_length(graph)
+		logging.info('The average shortest path length of %s is %s' % (graph_name, asp))
+
+
+	def random_graph(self):
+		
+		#Compute graph and caculate average path length, clustering coeff 
+		logging.info('Inside random graph')
+		RG = nx.gnm_random_graph(self.node_count, self.edge_count)
+		RG = nx.connected_component_subgraphs(RG.to_undirected())[0]
+		self.average_shortest_path_length('Random graph', RG)
+		self.global_clustering_coefficient('Random graph', RG)
+		
+
+    	def small_world_model_graph(self):
+		#Compute graph and caculate average path length, clustering coeff 
+		logging.info('Inside small world model graph')
+		SWG = nx.watts_strogatz_graph(self.node_count, self.node_count-1, self.SMALL_WORLD_PROB)
+		self.average_shortest_path_length('Small world model graph', SWG)
+		self.global_clustering_coefficient('Small world model graph', SWG)
+	
+    	def preferential_model_graph(self):
+		#Compute graph and caculate average path length, clustering coeff 
+		logging.info('Inside preferential model graph module')
+		PG = nx.barabasi_albert_graph(self.node_count, self.edge_count)
+		self.average_shortest_path_length('Preferential attachment model', PG)
+		self.global_clustering_coefficient('Preferential attachment model', PG)
+	
 
 if __name__ == "__main__":
 	san  = SocialNetworkAnalysis()
