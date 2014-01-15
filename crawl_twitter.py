@@ -7,10 +7,10 @@ class crawl_twitter:
 	def __init__(self):
 
 		#Security Credentials
-		self.consumer_key="nhvaSdfkzTa2QQmEWAbu9g"
-		self.consumer_secret="Shi3XBkLwocYdfHbptEoLK3KbHDQ5MRYyA4Qq9jEW4"
-		self.access_token_key="224897371-ZipzKRKDopJdNjSc3zkTJUwfKwHdigKCBpCqcY7A"
-		self.access_token_secret="9eSEibVq6axdZKTjXB0Vc8qlALV0xLsEoCsUXFqpNU"
+		self.consumer_key=""
+		self.consumer_secret=""
+		self.access_token_key=""
+		self.access_token_secret=""
 		
 		#Constants
 		self.MAX_FRIENDS_NODE_COUNT = 1000
